@@ -1,0 +1,52 @@
+\echo 'Starting Olist bulk import: eight remaining CSV files.'
+\echo 'Customers are intentionally excluded because they are already imported.'
+
+-- The tables are currently empty according to the user's latest count query.
+-- TRUNCATE makes this script safe to re-run: all eight targets are reset,
+-- then loaded again. Run with psql --single-transaction so a failure rolls
+-- back the entire batch rather than leaving a partial import.
+TRUNCATE TABLE
+    raw.geolocation,
+    raw.order_items,
+    raw.order_payments,
+    raw.order_reviews,
+    raw.orders,
+    raw.products,
+    raw.sellers,
+    raw.product_category_name_translation;
+
+\echo 'Importing orders...'
+\copy raw.orders (order_id, customer_id, order_status, order_purchase_timestamp, order_approved_at, order_delivered_carrier_date, order_delivered_customer_date, order_estimated_delivery_date) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_orders_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing order items...'
+\copy raw.order_items (order_id, order_item_id, product_id, seller_id, shipping_limit_date, price, freight_value) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_order_items_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing payments...'
+\copy raw.order_payments (order_id, payment_sequential, payment_type, payment_installments, payment_value) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_order_payments_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing reviews...'
+\copy raw.order_reviews (review_id, order_id, review_score, review_comment_title, review_comment_message, review_creation_date, review_answer_timestamp) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_order_reviews_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing products...'
+\copy raw.products (product_id, product_category_name, product_name_lenght, product_description_lenght, product_photos_qty, product_weight_g, product_length_cm, product_height_cm, product_width_cm) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_products_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing sellers...'
+\copy raw.sellers (seller_id, seller_zip_code_prefix, seller_city, seller_state) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_sellers_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing product category translations...'
+\copy raw.product_category_name_translation (product_category_name, product_category_name_english) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/product_category_name_translation.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Importing geolocation (largest file)...'
+\copy raw.geolocation (geolocation_zip_code_prefix, geolocation_lat, geolocation_lng, geolocation_city, geolocation_state) FROM 'C:/Users/91843/Desktop/Analyst Portfolio Project/analyst-portfolio-starter/project-01-ecommerce/data/raw/olist_geolocation_dataset.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
+
+\echo 'Bulk import finished. Actual row counts follow.'
+SELECT 'customers' AS table_name, COUNT(*) AS row_count FROM raw.customers
+UNION ALL SELECT 'geolocation', COUNT(*) FROM raw.geolocation
+UNION ALL SELECT 'order_items', COUNT(*) FROM raw.order_items
+UNION ALL SELECT 'order_payments', COUNT(*) FROM raw.order_payments
+UNION ALL SELECT 'order_reviews', COUNT(*) FROM raw.order_reviews
+UNION ALL SELECT 'orders', COUNT(*) FROM raw.orders
+UNION ALL SELECT 'product_category_name_translation', COUNT(*) FROM raw.product_category_name_translation
+UNION ALL SELECT 'products', COUNT(*) FROM raw.products
+UNION ALL SELECT 'sellers', COUNT(*) FROM raw.sellers
+ORDER BY table_name;
